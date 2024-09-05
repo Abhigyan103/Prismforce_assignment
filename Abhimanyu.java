@@ -1,10 +1,12 @@
+import java.util.Arrays;
 import java.util.Scanner;
 
 class Abhimanyu {
+
     public static void main(String[] args) {
-        int power, skips, recharge,n;
-        int k[];
         try (Scanner sc = new Scanner(System.in)) {
+            int power, skips, recharge,n;
+            int k[];
             n=11; //Total Circles
             k = new int[n]; // Powers
             power=sc.nextInt(); // Abhimanyu's Power
@@ -13,59 +15,54 @@ class Abhimanyu {
             for(int i=0;i<n;i++){ // Enemy powers
                 k[i]=sc.nextInt();
             }
+            boolean ans = solve(n, power, skips, recharge, k);
+            System.out.println(ans?"Can cross":"Cannot cross");
         }
-        k[3]+=Math.ceil(k[2]/(double)2);
-        k[7]+=Math.ceil(k[6]/(double)2);
-        boolean dp[][][][] = new boolean[n+1][power+1][skips+1][recharge+1];
-
-        // Tabulation solution
-        for (int i = n; i >= 0; i--) {
-            for (int p = 0; p <= power; p++) {
-                for (int s = 0; s <= skips; s++) {
-                    for (int r = 0; r <= recharge; r++) {
-                        if(i==n) {
-                            dp[i][p][s][r]=true;
-                            continue;
-                        }
-                        boolean ans = false;
-                        if(p>=k[i]) { // Can beat
-                            ans = dp[i+1][p-k[i]][s][r];
-                        }
-                        if (s>0) { // Can skip
-                            ans= ans | dp[i+1][p][s-1][r];
-                        }
-                        if(r>0) { // can recharge
-                            if(power >= k[i]){// can beat
-                                ans = ans | dp[i+1][power-k[i]][s][r-1];
-                            }
-                        }
-                        dp[i][p][s][r]=ans;
+    }
+    public static boolean solve(int n,int power,int skips, int recharge,int[] k) {        
+        //Memoization Solution
+        int dp[][][][][] = new int[n+1][power+1][skips+1][recharge+1][2];
+        for(int[][][][] h:dp) {
+            for(int[][][] i : h){
+                for(int[][] j : i){
+                    for(int[] l :j){
+                        Arrays.fill(l,-1);
                     }
                 }
             }
         }
-        boolean ans = dp[0][power][skips][recharge];
-        System.out.println(ans?"Can cross":"Cannot cross");
+        boolean ans = f(0, power,skips, recharge,0, k, power, dp);
+        return ans;
     }
 
-//     static boolean f(int i, int p, int a, int b, int[] k, int initP, int[][][][] dp) {
-//         if(dp[i][p][a][b]!=-1) return dp[i][p][a][b]==1;
-//         if(i ==11) { // All Charkrayus crossed
-//             dp[i][p][a][b]=1;
-//             return true;
-//         }
-//         boolean ans = false;
+    static boolean f(int i, int p, int a, int b,int prevSkip, int[] k, int initP, int[][][][][] dp) {
+        if(dp[i][p][a][b][prevSkip]!=-1) return dp[i][p][a][b][prevSkip]==1;
+        if(i ==11) { // All Charkrayus crossed
+            dp[i][p][a][b][prevSkip]=1;
+            return true;
+        }
+        boolean ans = false;
+        int enemyPower=k[i];
+        if(i==3 || i==7) {
+            if(prevSkip==1) {
+                enemyPower=k[i]+k[i-1];
+            }else {
+                enemyPower=k[i]+k[i-1]/2;
+            }
+        }
         
-//         if(b>0) { // can recharge
-//             ans= ans | f(i, initP,a,b-1,k,initP,dp);
-//         }
-//         if (a > 0) { // Can skip
-//             ans= ans | f(i+1, p,a-1,b,k,initP,dp);
-//         }
-//         if(p>=k[i]) { // Can beat
-//             ans = f(i+1,p-k[i], a,b,k,initP,dp);
-//         }
-//         dp[i][p][a][b]=(ans)?1:0;
-//         return ans;
-//     }
+        if(b>0) { // can recharge
+            if(initP>=enemyPower){
+                ans |= f(i+1, initP-enemyPower,a,b-1,0,k,initP,dp);
+            }
+        }
+        if (a > 0) { // Can skip
+            ans |= f(i+1, p,a-1,b,1,k,initP,dp);
+        }
+        if(p>=enemyPower) { // Can beat
+            ans |= f(i+1,p-enemyPower, a,b,0,k,initP,dp);
+        }
+        dp[i][p][a][b][prevSkip]=(ans)?1:0;
+        return ans;
+    }
 }
